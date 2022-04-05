@@ -96,7 +96,7 @@ class App extends Component {
         let id = await token.methods.tokenOfOwnerByIndex(accounts[0], i).call()
         let tokenURI = await token.methods.tokenURI(id).call()
         this.setState({
-          tokenURI: [...this.state.tokenURI, tokenURI]
+          tokenURIs: [...this.state.tokenURIs, tokenURI]
         })
 
       }
@@ -107,7 +107,9 @@ class App extends Component {
 
   chooseImage = (cardId) => {
     cardId = cardId.toString()
-    if(this.state.cardsChosenId.includes(cardId)) {
+    if(this.state.cardsWon.includes(cardId)) {
+      return window.location.origin + '/images/white.png'
+    } else if(this.state.cardsChosenId.includes(cardId)) {
       return CARD_ARRAY[cardId].img
     } else {
       return window.location.origin + '/images/blank.png'
@@ -122,9 +124,41 @@ class App extends Component {
       cardsChosenId: [...this.state.cardsChosenId, cardId]
     })
     
-    // if (alreadyChosen === 1) {
-    //   setTimeout(this.checkForMatch, 100)
-    //   }
+    if (alreadyChosen === 1) {
+      setTimeout(this.checkForMatch, 100)
+    }
+  }
+
+  checkForMatch = async () => {
+    const optionOneId = this.state.cardsChosenId[0]
+    const optionTwoId = this.state.cardsChosenId[1]
+
+    if(optionOneId == optionTwoId) {
+      alert('You have clicked the same image!')
+    } else if (this.state.cardsChosen[0] === this.state.cardsChosen[1]) {
+      alert('You found a match')
+      this.state.token.methods.mint(
+        this.state.account,
+        window.location.origin + CARD_ARRAY[optionOneId].img.toString()
+      )
+      .send({ from: this.state.account })
+      .on('transactionHash', (hash) => {
+        this.setState({
+          cardsWon: [...this.state.cardsWon, optionOneId, optionTwoId],
+          tokenURIs: [...this.state.tokenURIs, CARD_ARRAY[optionOneId].img]
+        })
+      })
+
+    } else {
+      alert('Sorry, try again')
+    } 
+    this.setState({
+      cardsChosen: [],
+      cardsChosenId: []
+    })
+    if (this.state.cardsWon.length === CARD_ARRAY.length) {
+      alert('Congratulations! You found them all!')
+    }
   }
 
   constructor(props) {
@@ -133,7 +167,7 @@ class App extends Component {
       account: '0x0',
       token: null,
       totalSupply: 0,
-      tokenURI: [],
+      tokenURIs: [],
       cardArray: [],
       cardsChosen: [],
       cardsChosenId: [],
@@ -164,7 +198,7 @@ class App extends Component {
           <div className="row">
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content mr-auto ml-auto">
-                <h1 className="d-4">Edit this file in App.js!</h1>
+                <h1 className="d-4">Start matching now!</h1>
 
                 <div className="grid mb-4" >
 
@@ -188,11 +222,18 @@ class App extends Component {
 
                 <div>
 
-                  {/* Code goes here... */}
+                  <h5>Tokens Collected:<span id="result">&nbsp;{this.state.tokenURIs.length}</span></h5>
 
                   <div className="grid mb-4" >
 
-                    {/* Code goes here... */}
+                    { this.state.tokenURIs.map((tokenURI, key) => {
+                      return(
+                        <img 
+                        key={key}
+                        src={tokenURI}
+                        />
+                      )
+                    })}
 
                   </div>
 
